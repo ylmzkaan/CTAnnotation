@@ -1,0 +1,14 @@
+C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\bin\Debug\CTAnnotation.exe.config
+C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\bin\Debug\CTAnnotation.exe
+C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\bin\Debug\CTAnnotation.pdb
+C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\bin\Debug\EvilDICOM.dll
+C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\bin\Debug\System.ValueTuple.dll
+C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\bin\Debug\System.ValueTuple.xml
+C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\obj\Debug\CTAnnotation.csprojAssemblyReference.cache
+C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\obj\Debug\CTAnnotation.Form1.resources
+C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\obj\Debug\CTAnnotation.Properties.Resources.resources
+C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\obj\Debug\CTAnnotation.csproj.GenerateResource.cache
+C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\obj\Debug\CTAnnotation.csproj.CoreCompileInputs.cache
+C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\obj\Debug\CTAnnotation.csproj.CopyComplete
+C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\obj\Debug\CTAnnotation.exe
+C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\obj\Debug\CTAnnotation.pdb
