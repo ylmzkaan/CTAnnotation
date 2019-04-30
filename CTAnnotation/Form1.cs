@@ -12,21 +12,39 @@ namespace CTAnnotation
 {
     public partial class Form1 : Form
     {
+        private string saveDir;
+        private string autoSaveFileName;
+
         private DicomAnnotator dicomAnnotator;
         private int currentDicomFileIndex;
          
-        private Graphics[] graphics;
-        private SolidBrush brush = new SolidBrush(Color.Green);
+        private Bitmap[] annotationGraphics;
+        private Pen pen;
+        private Pen erasePen;
+        private Color DEFAULT_PEN_COLOR = Color.Green;
 
-        private ushort[ , , ] annotationData;
+        private List<NonFocusButton> labelButtons;
 
+        private Label currentLabel = null;
+        private int annotationOpacity;
+        private const int DEFAULT_OPACITY = 128;
+
+        private int nSlices;
         private const int dcmHeight = 512;
         private const int dcmWidth = 512;
+
+        private int adjustedWidth;
+        private int adjustedHeight;
+
+        private Point currentAdditionalLabelButtonPosition;
+        private const int labelCheckboxOffset_X = 5;
+
+        private const int MAX_PEN_SIZE = 10;
+        private const int MIN_PEN_SIZE = 1;
 
         public Form1()
         {
             InitializeComponent();
-            dicomAnnotator = new DicomAnnotator(this);
         }
 
         private void openDicomFolderToolStripMenuItem_Click(object sender, EventArgs e)
@@ -37,7 +55,7 @@ namespace CTAnnotation
             {
                 string allowedExtension = "*.dcm";
                 string[] dicomPaths = Directory.GetFiles(fbd.SelectedPath, allowedExtension, SearchOption.AllDirectories);
-                int nSlices = dicomPaths.Length;
+                nSlices = dicomPaths.Length;
 
                 if ( dicomPaths.Length == 0)
                 {
@@ -45,14 +63,18 @@ namespace CTAnnotation
                                     MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
+
                 dicomAnnotator.DicomPaths = dicomPaths;
 
-                graphics = new Graphics[nSlices];
-                annotationData = new ushort[nSlices, 512, 512];
+                initAnnotationGraphics();
 
-                Image firstDCM = DicomLibrary.loadImage(dicomAnnotator.DicomObjs[0]);
-                this.pictureBox1.Image = firstDCM;
                 currentDicomFileIndex = 0;
+                Image firstDCM = DicomLibrary.loadImage(dicomAnnotator.DicomObjs[0]);
+                this.pictureBox1.BackgroundImage = firstDCM;
+                this.pictureBox1.Image = annotationGraphics[currentDicomFileIndex];
+
+                button1.Enabled = true;
+                saveAnnotationToolStripMenuItem.Enabled = true;
             }
         }
 
@@ -61,7 +83,159 @@ namespace CTAnnotation
             Application.Exit();
         }
 
-        private void mainWindow_KeyDown(object sender, KeyEventArgs e)
+        private void pictureBox1_MouseMove(object sender, MouseEventArgs e)
+        {
+            int adjustedX = (int) ((double)e.X / this.pictureBox1.Size.Width * dcmWidth);
+            int adjustedY = (int) ((double)e.Y / this.pictureBox1.Size.Height * dcmHeight);
+            this.label1.Text = String.Format("X: {0} Y: {1}", adjustedX, adjustedY);
+
+            if (pictureBox1.Image == null) { return; }
+            if (currentLabel == null) { return; }
+            
+            if (e.Button == MouseButtons.Left)
+            {
+                if (dicomAnnotator.AnnotationData[currentDicomFileIndex, adjustedY, adjustedX] == 0)
+                {
+                    Image bmp = pictureBox1.Image;
+                    using (Graphics g = Graphics.FromImage(bmp))
+                    {
+                        g.DrawRectangle(pen, e.Location.X, e.Location.Y, adjustedWidth, adjustedHeight);
+                        dicomAnnotator.AnnotationData[currentDicomFileIndex, adjustedY, adjustedX] = (ushort)currentLabel.index;
+                    }
+                    pictureBox1.Image = bmp;
+                }
+            }
+            else if (e.Button == MouseButtons.Right)
+            {
+                if (dicomAnnotator.AnnotationData[currentDicomFileIndex, adjustedY, adjustedX] != 0)
+                {
+                    deleteAnnotation(adjustedX, adjustedY, e);
+                }
+            }
+        } // end pictureBox1_MouseMove
+
+        private void deleteAnnotation(int adjustedX, int adjustedY, MouseEventArgs e)
+        {
+            Image bmp = pictureBox1.Image;
+            using (Graphics g = Graphics.FromImage(bmp))
+            {
+                Rectangle areaToDelete = new Rectangle(e.Location.X, e.Location.Y, adjustedWidth, adjustedHeight);
+
+                g.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
+                g.DrawRectangle(erasePen, areaToDelete);
+                g.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceOver;
+                dicomAnnotator.AnnotationData[currentDicomFileIndex, adjustedY, adjustedX] = 0;
+            }
+            pictureBox1.Image = bmp;
+        }
+        
+        private void pictureBox1_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (pictureBox1.Image == null) { return; }
+            if (currentLabel == null) { return; }
+
+            int adjustedX = (int)((double)e.X / this.pictureBox1.Size.Width * dcmWidth);
+            int adjustedY = (int)((double)e.Y / this.pictureBox1.Size.Height * dcmHeight);
+
+            if (e.Button == MouseButtons.Left)
+            {
+                if (dicomAnnotator.AnnotationData[currentDicomFileIndex, adjustedY, adjustedX] == 0)
+                {
+                    Image bmp = pictureBox1.Image;
+                    using (Graphics g = Graphics.FromImage(bmp))
+                    {
+                        g.DrawRectangle(pen, e.Location.X, e.Location.Y, adjustedWidth, adjustedHeight);
+                        dicomAnnotator.AnnotationData[currentDicomFileIndex, adjustedY, adjustedX] = (ushort)currentLabel.index;
+                    }
+                    pictureBox1.Image = bmp;
+                }
+            }
+            else if (e.Button == MouseButtons.Right)
+            {
+                deleteAnnotation(adjustedX, adjustedY, e);
+            }
+        } // end pictureBox1_MouseClick
+
+        private void initAnnotationGraphics()
+        {
+            annotationGraphics = new Bitmap[nSlices];
+            for (int i = 0; i < nSlices; ++i)
+            {
+                Bitmap bmp = new Bitmap(pictureBox1.Width, pictureBox1.Height);
+                using (Graphics g = Graphics.FromImage(bmp))
+                {
+                    g.FillRectangle(Brushes.Transparent, new Rectangle(Point.Empty, bmp.Size));
+                }
+                annotationGraphics[i] = bmp;
+            }
+        }
+
+        private void addLabelToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            AddLabelForm addLabelForm = new AddLabelForm(this);
+            addLabelForm.Show(this);
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            if (annotationGraphics == null) { return; }
+
+            if (pictureBox1.Image != null)
+            {
+                pictureBox1.Image = null;
+                button1.Text = "Show Annotation";
+            }
+            else
+            {
+                pictureBox1.Image = annotationGraphics[currentDicomFileIndex];
+                button1.Text = "Hide Annotation";
+            }
+        }
+
+        public void addLabelToPanel1(Label label)
+        {
+            NonFocusButton btn = new NonFocusButton();
+            btn.Text = label.name;
+            btn.Location = currentAdditionalLabelButtonPosition;
+            btn.Size = button1.Size;
+            btn.UseVisualStyleBackColor = false;
+            btn.BackColor = label.color;
+            btn.Click += labelSelectorButton_Clicked;
+
+            panel1.Controls.Add(btn);
+            labelButtons.Add(btn);
+
+            currentAdditionalLabelButtonPosition.X += btn.Size.Width;
+
+            btn.PerformClick();
+        }
+
+        private void labelSelectorButton_Clicked(object sender, EventArgs e)
+        {
+            NonFocusButton btn = (NonFocusButton)sender;
+            currentLabel = this.DicomAnnotator.Labels.First(m => m.name == btn.Text);
+
+            if (pen != null) { pen.Dispose(); }
+            
+            pen = new Pen(Color.FromArgb(annotationOpacity, currentLabel.color));
+
+            NonFocusButton prevLabelBtn = labelButtons.Find(m => m.Enabled == false);
+            if (prevLabelBtn != null)
+            {
+                prevLabelBtn.Enabled = true;
+            }
+            btn.Enabled = false;
+
+            //penSizeNumericUpDown.Enabled = true;
+        }
+
+        public DicomAnnotator DicomAnnotator
+        {
+            get { return dicomAnnotator; }
+            set { dicomAnnotator = value; }
+        }
+
+        private void Form1_KeyDown(object sender, KeyEventArgs e)
         {
             if (dicomAnnotator.DicomObjs.Count == 0)
             {
@@ -76,7 +250,8 @@ namespace CTAnnotation
                     currentDicomFileIndex = 0;
                 }
                 Image dcm = DicomLibrary.loadImage(dicomAnnotator.DicomObjs[currentDicomFileIndex]);
-                this.pictureBox1.Image = dcm;
+                this.pictureBox1.BackgroundImage = dcm;
+                this.pictureBox1.Image = annotationGraphics[currentDicomFileIndex];
                 this.label2.Text = String.Format("Index: {0}", currentDicomFileIndex);
             }
             else if (e.KeyCode == Keys.Up)
@@ -84,25 +259,112 @@ namespace CTAnnotation
                 currentDicomFileIndex--;
                 if (currentDicomFileIndex < 0)
                 {
-                    currentDicomFileIndex = dicomAnnotator.DicomObjs.Count-1;
+                    currentDicomFileIndex = dicomAnnotator.DicomObjs.Count - 1;
                 }
 
                 Image dcm = DicomLibrary.loadImage(dicomAnnotator.DicomObjs[currentDicomFileIndex]);
-                this.pictureBox1.Image = dcm;
+                this.pictureBox1.BackgroundImage = dcm;
+                this.pictureBox1.Image = annotationGraphics[currentDicomFileIndex];
                 this.label2.Text = String.Format("Index: {0}", currentDicomFileIndex);
             }
-
-            if (graphics[currentDicomFileIndex] == null && this.pictureBox1.Image != null)
+            else if (e.KeyCode == Keys.Tab)
             {
-                graphics[currentDicomFileIndex] = Graphics.FromImage(this.pictureBox1.Image);
+                button1.PerformClick();
+            }
+        } // end Form1_KeyDown
+
+        private void saveAnnotationToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog sfd = new SaveFileDialog();
+            sfd.Title = "Browse to save file";
+            sfd.Filter = "Cta Files (*.cta)|*.cta";
+            sfd.DefaultExt = "cta";
+            sfd.CheckPathExists = true;
+
+            DialogResult result = sfd.ShowDialog();
+            if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(sfd.FileName))
+            {
+                dicomAnnotator.updateSaveData();
+                File.WriteAllText(sfd.FileName, dicomAnnotator.SaveData);
+
+                MessageBox.Show("Your file is succesfully saved.", "Save Succesfull",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            MessageBox.Show("Could not save the file.", "Error while saving",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
+        private void loadAnnotationMenuItem1_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog fdlg = new OpenFileDialog();
+            fdlg.Filter = "cta files (*.cta)|*.cta|All files (*.*)|*.*";
+            DialogResult result = fdlg.ShowDialog(); // Show the dialog.
+            if (result == DialogResult.OK) // Test result.
+            {
+                string file = fdlg.FileName;
+                DicomAnnotator loadedDicomAnnotator = (DicomAnnotator)JSONHelper.FromJSON(file);
+                this.dicomAnnotator = loadedDicomAnnotator;
+
+                nSlices = dicomAnnotator.DicomPaths.Length;
+
+                currentDicomFileIndex = 0;
+                Image firstDCM = DicomLibrary.loadImage(dicomAnnotator.DicomObjs[0]);
+                this.pictureBox1.BackgroundImage = firstDCM;
+                this.pictureBox1.Image = annotationGraphics[currentDicomFileIndex];
             }
         }
 
-        private void pictureBox1_MouseMove(object sender, MouseEventArgs e)
+        private void penSizeNumericUpDown_ValueChanged(object sender, EventArgs e)
         {
-            int adjustedX = (int) ((double)e.X / this.pictureBox1.Size.Width * dcmWidth);
-            int adjustedY = (int) ((double)e.Y / this.pictureBox1.Size.Height * dcmHeight);
-            this.label1.Text = String.Format("X: {0} Y: {1}", adjustedX, adjustedY);
+            if (currentLabel == null) { return; }
+
+            float penSize = (float)penSizeNumericUpDown.Value;
+            if (penSize > MAX_PEN_SIZE)
+            {
+                penSize = MAX_PEN_SIZE;
+                penSizeNumericUpDown.Value = (Decimal)penSize;
+            }
+            else if (penSize < MIN_PEN_SIZE)
+            {
+                penSize = MIN_PEN_SIZE;
+                penSizeNumericUpDown.Value = (Decimal)penSize;
+            }
+
+            if (pen != null) { pen.Dispose(); }
+            pen = new Pen(Color.FromArgb(annotationOpacity, currentLabel.color), penSize);
+
+            penSizeLabel.Focus();
         }
-    }
-}
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            this.SetStyle(
+                            ControlStyles.AllPaintingInWmPaint |
+                            ControlStyles.DoubleBuffer,
+                            true);
+
+            dicomAnnotator = new DicomAnnotator();
+            annotationOpacity = DEFAULT_OPACITY;
+
+            erasePen = new Pen(Color.Transparent);
+
+            labelButtons = new List<NonFocusButton>();
+
+            adjustedWidth = (int)(this.pictureBox1.Size.Width / dcmWidth);
+            adjustedHeight = (int)(this.pictureBox1.Size.Height / dcmHeight);
+
+            currentAdditionalLabelButtonPosition = penSizeNumericUpDown.Location;
+            currentAdditionalLabelButtonPosition.Y = button1.Location.Y;
+            currentAdditionalLabelButtonPosition.X += penSizeNumericUpDown.Size.Width;
+            currentAdditionalLabelButtonPosition.X += labelCheckboxOffset_X;
+
+            saveDir = Application.StartupPath;
+            autoSaveFileName = "CTAnnotation-AutoSave.cta";
+
+            ToolTip TP = new ToolTip();
+            TP.ShowAlways = true;
+            TP.SetToolTip(button1, "Show or hide annotation (Tab)");
+        }
+    } // end Form1
+} // end namespace CTAnnotation

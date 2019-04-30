@@ -12,3 +12,4 @@ C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\obj\Debug\CTAnnotation.csp
 C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\obj\Debug\CTAnnotation.csproj.CopyComplete
 C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\obj\Debug\CTAnnotation.exe
 C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\obj\Debug\CTAnnotation.pdb
+C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\obj\Debug\CTAnnotation.AddLabelForm.resources
