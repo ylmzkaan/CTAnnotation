@@ -12,22 +12,20 @@ namespace CTAnnotation
 {
     public class DicomAnnotator
     {
-        //private Form1 form;
         private string[] dicomPaths;
-        private List<DICOMObject> dicomObjs;
 
+        private Bitmap[] annotationGraphics;
         private ushort[,,] annotationData;
+        private ushort[] metaData;
 
         private List<Label> labels;
-        private int currentLabelIndex;
+        private ushort currentLabelIndex;
 
         private string saveData;
 
         public DicomAnnotator()
         {
-            //this.form = form;
-
-            dicomObjs = new List<DICOMObject>();
+            currentLabelIndex = 1;
             labels = new List<Label>();
         }
 
@@ -42,17 +40,16 @@ namespace CTAnnotation
             set
             {
                 dicomPaths = value;
-                dicomObjs = DicomLibrary.readDicomFromPaths(dicomPaths);
-                int nSlices = dicomPaths.Length;
+                ushort nSlices = (ushort)dicomPaths.Length;
+                metaData = new ushort[3] { nSlices, 512, 512};
                 annotationData = new ushort[nSlices, 512, 512];
             }
         }
 
-        [ScriptIgnore]
-        public List<DICOMObject> DicomObjs
+        public Bitmap[] AnnotationGraphics
         {
-            get { return dicomObjs; }
-            set { dicomObjs = value; }
+            get { return annotationGraphics; }
+            set { annotationGraphics = value; }
         }
 
         public ushort[,,] AnnotationData
@@ -61,13 +58,19 @@ namespace CTAnnotation
             set { annotationData = value; }
         }
 
+        public ushort[] MetaData
+        {
+            get { return metaData; }
+            set { metaData = value; }
+        }
+
         public List<Label> Labels
         {
             get { return labels; }
             set { labels = value; }
         }
 
-        public int CurrentLabelIndex
+        public ushort CurrentLabelIndex
         {
             get { return currentLabelIndex; }
             set { currentLabelIndex = value; }

@@ -22,8 +22,8 @@ namespace CTAnnotation
             string text = File.ReadAllText(filename);
             JavaScriptSerializer serializer = new JavaScriptSerializer();
             serializer.MaxJsonLength = 1024000000;
-            return serializer.Deserialize<DicomAnnotator>(text);
+            DicomAnnotator loadedDicomAnnotator = serializer.Deserialize<DicomAnnotator>(text);
+            return loadedDicomAnnotator;
         }
-        
     }
 }

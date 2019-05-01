@@ -45,6 +45,7 @@
             this.label1 = new System.Windows.Forms.Label();
             this.panel3 = new System.Windows.Forms.Panel();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
+            this.exportAnnotationMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.penSizeNumericUpDown)).BeginInit();
@@ -70,6 +71,7 @@
             this.openDicomFolderToolStripMenuItem,
             this.loadAnnotationMenuItem1,
             this.saveAnnotationToolStripMenuItem,
+            this.exportAnnotationMenuItem1,
             this.exitToolStripMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
@@ -78,14 +80,14 @@
             // openDicomFolderToolStripMenuItem
             // 
             this.openDicomFolderToolStripMenuItem.Name = "openDicomFolderToolStripMenuItem";
-            this.openDicomFolderToolStripMenuItem.Size = new System.Drawing.Size(177, 22);
+            this.openDicomFolderToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.openDicomFolderToolStripMenuItem.Text = "Open Dicom Folder";
             this.openDicomFolderToolStripMenuItem.Click += new System.EventHandler(this.openDicomFolderToolStripMenuItem_Click);
             // 
             // loadAnnotationMenuItem1
             // 
             this.loadAnnotationMenuItem1.Name = "loadAnnotationMenuItem1";
-            this.loadAnnotationMenuItem1.Size = new System.Drawing.Size(177, 22);
+            this.loadAnnotationMenuItem1.Size = new System.Drawing.Size(180, 22);
             this.loadAnnotationMenuItem1.Text = "Load Annotation";
             this.loadAnnotationMenuItem1.Click += new System.EventHandler(this.loadAnnotationMenuItem1_Click);
             // 
@@ -93,14 +95,14 @@
             // 
             this.saveAnnotationToolStripMenuItem.Enabled = false;
             this.saveAnnotationToolStripMenuItem.Name = "saveAnnotationToolStripMenuItem";
-            this.saveAnnotationToolStripMenuItem.Size = new System.Drawing.Size(177, 22);
+            this.saveAnnotationToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.saveAnnotationToolStripMenuItem.Text = "Save Annotation";
             this.saveAnnotationToolStripMenuItem.Click += new System.EventHandler(this.saveAnnotationToolStripMenuItem_Click);
             // 
             // exitToolStripMenuItem
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(177, 22);
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.exitToolStripMenuItem.Text = "Exit";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
             // 
@@ -222,6 +224,14 @@
             this.pictureBox1.MouseClick += new System.Windows.Forms.MouseEventHandler(this.pictureBox1_MouseClick);
             this.pictureBox1.MouseMove += new System.Windows.Forms.MouseEventHandler(this.pictureBox1_MouseMove);
             // 
+            // exportAnnotationMenuItem1
+            // 
+            this.exportAnnotationMenuItem1.Enabled = false;
+            this.exportAnnotationMenuItem1.Name = "exportAnnotationMenuItem1";
+            this.exportAnnotationMenuItem1.Size = new System.Drawing.Size(180, 22);
+            this.exportAnnotationMenuItem1.Text = "Export Annotation";
+            this.exportAnnotationMenuItem1.Click += new System.EventHandler(this.exportAnnotationMenuItem1_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -272,6 +282,7 @@
         private System.Windows.Forms.ToolStripMenuItem loadAnnotationMenuItem1;
         private System.Windows.Forms.NumericUpDown penSizeNumericUpDown;
         private System.Windows.Forms.Label penSizeLabel;
+        private System.Windows.Forms.ToolStripMenuItem exportAnnotationMenuItem1;
     }
 }
 

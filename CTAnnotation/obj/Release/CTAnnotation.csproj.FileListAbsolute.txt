@@ -1,0 +1,15 @@
+C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\bin\Release\CTAnnotation.exe.config
+C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\bin\Release\CTAnnotation.exe
+C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\bin\Release\CTAnnotation.pdb
+C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\bin\Release\EvilDICOM.dll
+C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\bin\Release\System.ValueTuple.dll
+C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\bin\Release\System.ValueTuple.xml
+C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\obj\Release\CTAnnotation.csprojAssemblyReference.cache
+C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\obj\Release\CTAnnotation.AddLabelForm.resources
+C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\obj\Release\CTAnnotation.Form1.resources
+C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\obj\Release\CTAnnotation.Properties.Resources.resources
+C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\obj\Release\CTAnnotation.csproj.GenerateResource.cache
+C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\obj\Release\CTAnnotation.csproj.CoreCompileInputs.cache
+C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\obj\Release\CTAnnotation.csproj.CopyComplete
+C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\obj\Release\CTAnnotation.exe
+C:\Users\kaany\source\repos\CTAnnotation\CTAnnotation\obj\Release\CTAnnotation.pdb

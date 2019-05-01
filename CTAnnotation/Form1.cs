@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EvilDICOM.Core;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -17,6 +18,7 @@ namespace CTAnnotation
 
         private DicomAnnotator dicomAnnotator;
         private int currentDicomFileIndex;
+        private List<DICOMObject> dicomObjs;
          
         private Bitmap[] annotationGraphics;
         private Pen pen;
@@ -27,7 +29,7 @@ namespace CTAnnotation
 
         private Label currentLabel = null;
         private int annotationOpacity;
-        private const int DEFAULT_OPACITY = 128;
+        private const int DEFAULT_OPACITY = 255;
 
         private int nSlices;
         private const int dcmHeight = 512;
@@ -54,8 +56,7 @@ namespace CTAnnotation
             if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
             {
                 string allowedExtension = "*.dcm";
-                string[] dicomPaths = Directory.GetFiles(fbd.SelectedPath, allowedExtension, SearchOption.AllDirectories);
-                nSlices = dicomPaths.Length;
+                string[] dicomPaths = Directory.GetFiles(fbd.SelectedPath, allowedExtension, SearchOption.AllDirectories);                
 
                 if ( dicomPaths.Length == 0)
                 {
@@ -65,16 +66,7 @@ namespace CTAnnotation
                 }
 
                 dicomAnnotator.DicomPaths = dicomPaths;
-
-                initAnnotationGraphics();
-
-                currentDicomFileIndex = 0;
-                Image firstDCM = DicomLibrary.loadImage(dicomAnnotator.DicomObjs[0]);
-                this.pictureBox1.BackgroundImage = firstDCM;
-                this.pictureBox1.Image = annotationGraphics[currentDicomFileIndex];
-
-                button1.Enabled = true;
-                saveAnnotationToolStripMenuItem.Enabled = true;
+                initializeAnnotationDataFromCurrentDicomAnnotator();
             }
         }
 
@@ -100,7 +92,7 @@ namespace CTAnnotation
                     using (Graphics g = Graphics.FromImage(bmp))
                     {
                         g.DrawRectangle(pen, e.Location.X, e.Location.Y, adjustedWidth, adjustedHeight);
-                        dicomAnnotator.AnnotationData[currentDicomFileIndex, adjustedY, adjustedX] = (ushort)currentLabel.index;
+                        dicomAnnotator.AnnotationData[currentDicomFileIndex, adjustedY, adjustedX] = currentLabel.index;
                     }
                     pictureBox1.Image = bmp;
                 }
@@ -145,7 +137,7 @@ namespace CTAnnotation
                     using (Graphics g = Graphics.FromImage(bmp))
                     {
                         g.DrawRectangle(pen, e.Location.X, e.Location.Y, adjustedWidth, adjustedHeight);
-                        dicomAnnotator.AnnotationData[currentDicomFileIndex, adjustedY, adjustedX] = (ushort)currentLabel.index;
+                        dicomAnnotator.AnnotationData[currentDicomFileIndex, adjustedY, adjustedX] = currentLabel.index;
                     }
                     pictureBox1.Image = bmp;
                 }
@@ -237,7 +229,7 @@ namespace CTAnnotation
 
         private void Form1_KeyDown(object sender, KeyEventArgs e)
         {
-            if (dicomAnnotator.DicomObjs.Count == 0)
+            if (dicomObjs.Count == 0)
             {
                 return;
             }
@@ -245,11 +237,11 @@ namespace CTAnnotation
             if (e.KeyCode == Keys.Down)
             {
                 currentDicomFileIndex++;
-                if (currentDicomFileIndex >= dicomAnnotator.DicomObjs.Count)
+                if (currentDicomFileIndex >= dicomObjs.Count)
                 {
                     currentDicomFileIndex = 0;
                 }
-                Image dcm = DicomLibrary.loadImage(dicomAnnotator.DicomObjs[currentDicomFileIndex]);
+                Image dcm = DicomLibrary.loadImage(dicomObjs[currentDicomFileIndex]);
                 this.pictureBox1.BackgroundImage = dcm;
                 this.pictureBox1.Image = annotationGraphics[currentDicomFileIndex];
                 this.label2.Text = String.Format("Index: {0}", currentDicomFileIndex);
@@ -259,60 +251,84 @@ namespace CTAnnotation
                 currentDicomFileIndex--;
                 if (currentDicomFileIndex < 0)
                 {
-                    currentDicomFileIndex = dicomAnnotator.DicomObjs.Count - 1;
+                    currentDicomFileIndex = dicomObjs.Count - 1;
                 }
 
-                Image dcm = DicomLibrary.loadImage(dicomAnnotator.DicomObjs[currentDicomFileIndex]);
+                Image dcm = DicomLibrary.loadImage(dicomObjs[currentDicomFileIndex]);
                 this.pictureBox1.BackgroundImage = dcm;
                 this.pictureBox1.Image = annotationGraphics[currentDicomFileIndex];
                 this.label2.Text = String.Format("Index: {0}", currentDicomFileIndex);
             }
             else if (e.KeyCode == Keys.Tab)
             {
-                button1.PerformClick();
+                button1_Click(button1, EventArgs.Empty); 
             }
         } // end Form1_KeyDown
 
         private void saveAnnotationToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            
             SaveFileDialog sfd = new SaveFileDialog();
-            sfd.Title = "Browse to save file";
-            sfd.Filter = "Cta Files (*.cta)|*.cta";
-            sfd.DefaultExt = "cta";
+            sfd.Title = "Browse to save annotation";
+            sfd.Filter = "Json files (*.json)|*.json|All files (*.*)|*.*";
             sfd.CheckPathExists = true;
 
             DialogResult result = sfd.ShowDialog();
             if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(sfd.FileName))
             {
-                dicomAnnotator.updateSaveData();
-                File.WriteAllText(sfd.FileName, dicomAnnotator.SaveData);
+                dicomAnnotator.AnnotationGraphics = annotationGraphics;
+                string json = JSONHelper.ToJSON(dicomAnnotator);
+                File.WriteAllText(sfd.FileName, json);
 
-                MessageBox.Show("Your file is succesfully saved.", "Save Succesfull",
+                MessageBox.Show("Your data is succesfully saved.", "Save Succesful",
                                     MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
-            MessageBox.Show("Could not save the file.", "Error while saving",
-                                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show("Could not save the annotation data.", "Error while saving",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Error); 
         }
 
         private void loadAnnotationMenuItem1_Click(object sender, EventArgs e)
         {
             OpenFileDialog fdlg = new OpenFileDialog();
-            fdlg.Filter = "cta files (*.cta)|*.cta|All files (*.*)|*.*";
+            fdlg.Filter = "Json files (*.json)|*.json|All files (*.*)|*.*";
             DialogResult result = fdlg.ShowDialog(); // Show the dialog.
             if (result == DialogResult.OK) // Test result.
             {
                 string file = fdlg.FileName;
                 DicomAnnotator loadedDicomAnnotator = (DicomAnnotator)JSONHelper.FromJSON(file);
-                this.dicomAnnotator = loadedDicomAnnotator;
+                dicomAnnotator = loadedDicomAnnotator;
+                annotationGraphics = dicomAnnotator.AnnotationGraphics;
 
-                nSlices = dicomAnnotator.DicomPaths.Length;
-
-                currentDicomFileIndex = 0;
-                Image firstDCM = DicomLibrary.loadImage(dicomAnnotator.DicomObjs[0]);
-                this.pictureBox1.BackgroundImage = firstDCM;
-                this.pictureBox1.Image = annotationGraphics[currentDicomFileIndex];
+                initializeAnnotationDataFromCurrentDicomAnnotator();
             }
+        }
+
+        private void initializeAnnotationDataFromCurrentDicomAnnotator()
+        {
+            if (dicomAnnotator.DicomPaths == null)
+            {
+                MessageBox.Show("Could not load the annotation data.", "Initialization Failed",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            dicomObjs = DicomLibrary.readDicomFromPaths(dicomAnnotator.DicomPaths);
+
+            nSlices = dicomAnnotator.DicomPaths.Length;
+            ushort[] metaData = { (ushort)nSlices, 512, 512 };
+            dicomAnnotator.MetaData = metaData;
+
+            initAnnotationGraphics();
+
+            currentDicomFileIndex = 0;
+            Image firstDCM = DicomLibrary.loadImage(dicomObjs[currentDicomFileIndex]);
+            pictureBox1.BackgroundImage = firstDCM;
+            pictureBox1.Image = annotationGraphics[currentDicomFileIndex];
+
+            button1.Enabled = true;
+            saveAnnotationToolStripMenuItem.Enabled = true;
+            exportAnnotationMenuItem1.Enabled = true;
         }
 
         private void penSizeNumericUpDown_ValueChanged(object sender, EventArgs e)
@@ -345,6 +361,7 @@ namespace CTAnnotation
                             true);
 
             dicomAnnotator = new DicomAnnotator();
+            dicomObjs = new List<DICOMObject>();
             annotationOpacity = DEFAULT_OPACITY;
 
             erasePen = new Pen(Color.Transparent);
@@ -365,6 +382,28 @@ namespace CTAnnotation
             ToolTip TP = new ToolTip();
             TP.ShowAlways = true;
             TP.SetToolTip(button1, "Show or hide annotation (Tab)");
+        }
+
+        private void exportAnnotationMenuItem1_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog sfd = new SaveFileDialog();
+            sfd.Title = "Browse to export annotation data";
+            sfd.Filter = "Json Files (*.json)|*.json";
+            sfd.DefaultExt = "json";
+            sfd.CheckPathExists = true;
+
+            DialogResult result = sfd.ShowDialog();
+            if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(sfd.FileName))
+            {
+                dicomAnnotator.updateSaveData();
+                File.WriteAllText(sfd.FileName, dicomAnnotator.SaveData);
+
+                MessageBox.Show("Data is succesfully exported.", "Save Succesful",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            MessageBox.Show("Could not export the data.", "Error while saving",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     } // end Form1
 } // end namespace CTAnnotation

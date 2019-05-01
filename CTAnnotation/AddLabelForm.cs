@@ -57,7 +57,7 @@ namespace CTAnnotation
                 return;
             }
 
-            int currentLabelIndex = mainForm.DicomAnnotator.CurrentLabelIndex++;
+            ushort currentLabelIndex = mainForm.DicomAnnotator.CurrentLabelIndex++;
 
             string labelName = labelColorComboBox.SelectedItem.ToString();
             Label newLabel = new Label(labelName, currentLabelIndex, color);
