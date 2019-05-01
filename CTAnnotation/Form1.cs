@@ -270,7 +270,7 @@ namespace CTAnnotation
             
             SaveFileDialog sfd = new SaveFileDialog();
             sfd.Title = "Browse to save annotation";
-            sfd.Filter = "Json files (*.json)|*.json|All files (*.*)|*.*";
+            sfd.Filter = "Json files (*.json)|*.json";
             sfd.CheckPathExists = true;
 
             DialogResult result = sfd.ShowDialog();
@@ -291,12 +291,12 @@ namespace CTAnnotation
         private void loadAnnotationMenuItem1_Click(object sender, EventArgs e)
         {
             OpenFileDialog fdlg = new OpenFileDialog();
-            fdlg.Filter = "Json files (*.json)|*.json|All files (*.*)|*.*";
+            fdlg.Filter = "Json files (*.json)|*.json";
             DialogResult result = fdlg.ShowDialog(); // Show the dialog.
             if (result == DialogResult.OK) // Test result.
             {
                 string file = fdlg.FileName;
-                DicomAnnotator loadedDicomAnnotator = (DicomAnnotator)JSONHelper.FromJSON(file);
+                DicomAnnotator loadedDicomAnnotator = JSONHelper.FromJSON<DicomAnnotator>(file);
                 dicomAnnotator = loadedDicomAnnotator;
                 annotationGraphics = dicomAnnotator.AnnotationGraphics;
 
@@ -316,15 +316,31 @@ namespace CTAnnotation
             dicomObjs = DicomLibrary.readDicomFromPaths(dicomAnnotator.DicomPaths);
 
             nSlices = dicomAnnotator.DicomPaths.Length;
-            ushort[] metaData = { (ushort)nSlices, 512, 512 };
-            dicomAnnotator.MetaData = metaData;
+            ushort[] ctDim = new ushort[3] { (ushort)nSlices, 512, 512 };
+            dicomAnnotator.CtDim = ctDim;
 
             initAnnotationGraphics();
 
             currentDicomFileIndex = 0;
+            label2.Text = String.Format("Index: {0}", currentDicomFileIndex);
             Image firstDCM = DicomLibrary.loadImage(dicomObjs[currentDicomFileIndex]);
             pictureBox1.BackgroundImage = firstDCM;
             pictureBox1.Image = annotationGraphics[currentDicomFileIndex];
+            
+            // Reset label button position
+            currentAdditionalLabelButtonPosition = penSizeNumericUpDown.Location;
+            currentAdditionalLabelButtonPosition.Y = button1.Location.Y;
+            currentAdditionalLabelButtonPosition.X += penSizeNumericUpDown.Size.Width;
+            currentAdditionalLabelButtonPosition.X += labelCheckboxOffset_X;
+
+            if (dicomAnnotator.Labels != null)
+            {
+                if (labelButtons != null)
+                {
+                    foreach(Button btn in labelButtons) { panel1.Controls.Remove(btn); }
+                }
+                foreach(Label label in dicomAnnotator.Labels) { addLabelToPanel1(label); }
+            }
 
             button1.Enabled = true;
             saveAnnotationToolStripMenuItem.Enabled = true;
@@ -377,7 +393,7 @@ namespace CTAnnotation
             currentAdditionalLabelButtonPosition.X += labelCheckboxOffset_X;
 
             saveDir = Application.StartupPath;
-            autoSaveFileName = "CTAnnotation-AutoSave.cta";
+            autoSaveFileName = "CTAnnotation-AutoSave.json";
 
             ToolTip TP = new ToolTip();
             TP.ShowAlways = true;
@@ -395,8 +411,10 @@ namespace CTAnnotation
             DialogResult result = sfd.ShowDialog();
             if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(sfd.FileName))
             {
-                dicomAnnotator.updateSaveData();
-                File.WriteAllText(sfd.FileName, dicomAnnotator.SaveData);
+                SaveData saveData = new SaveData(dicomAnnotator.AnnotationData, dicomAnnotator.CtDim);
+                string saveDataString = JSONHelper.ToJSON(saveData);
+
+                File.WriteAllText(sfd.FileName, saveDataString);
 
                 MessageBox.Show("Data is succesfully exported.", "Save Succesful",
                                     MessageBoxButtons.OK, MessageBoxIcon.Information);

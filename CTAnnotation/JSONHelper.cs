@@ -17,12 +17,12 @@ namespace CTAnnotation
             return serializer.Serialize(obj);
         }
         
-        public static object FromJSON(string filename)
+        public static T FromJSON<T>(string filename)
         {
             string text = File.ReadAllText(filename);
             JavaScriptSerializer serializer = new JavaScriptSerializer();
             serializer.MaxJsonLength = 1024000000;
-            DicomAnnotator loadedDicomAnnotator = serializer.Deserialize<DicomAnnotator>(text);
+            T loadedDicomAnnotator = serializer.Deserialize<T>(text);
             return loadedDicomAnnotator;
         }
     }

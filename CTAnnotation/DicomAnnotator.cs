@@ -16,22 +16,15 @@ namespace CTAnnotation
 
         private Bitmap[] annotationGraphics;
         private ushort[,,] annotationData;
-        private ushort[] metaData;
+        private ushort[] ctDim;
 
         private List<Label> labels;
         private ushort currentLabelIndex;
-
-        private string saveData;
 
         public DicomAnnotator()
         {
             currentLabelIndex = 1;
             labels = new List<Label>();
-        }
-
-        public void updateSaveData()
-        {
-            saveData = JSONHelper.ToJSON(this);
         }
 
         public string[] DicomPaths
@@ -41,7 +34,7 @@ namespace CTAnnotation
             {
                 dicomPaths = value;
                 ushort nSlices = (ushort)dicomPaths.Length;
-                metaData = new ushort[3] { nSlices, 512, 512};
+                ctDim = new ushort[3] { nSlices, 512, 512};
                 annotationData = new ushort[nSlices, 512, 512];
             }
         }
@@ -58,10 +51,10 @@ namespace CTAnnotation
             set { annotationData = value; }
         }
 
-        public ushort[] MetaData
+        public ushort[] CtDim
         {
-            get { return metaData; }
-            set { metaData = value; }
+            get { return ctDim; }
+            set { ctDim = value; }
         }
 
         public List<Label> Labels
@@ -76,11 +69,5 @@ namespace CTAnnotation
             set { currentLabelIndex = value; }
         }
 
-        [ScriptIgnore]
-        public string SaveData
-        {
-            get { this.updateSaveData();  return saveData; }
-            set { saveData = value; }
-        }
     }
 }
